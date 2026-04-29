@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 
-const LINE_SECRET = process.env.LINE_SECRET;
 const LINE_TOKEN  = process.env.LINE_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -39,11 +38,6 @@ async function reply(token, text) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok:true });
-
-  const sig = req.headers['x-line-signature'];
-  const raw = req.rawBody || JSON.stringify(req.body);
-  const hash = crypto.createHmac('SHA256', LINE_SECRET).update(raw).digest('base64');
-  if (hash !== sig) return res.status(401).end();
 
   for (const event of (req.body.events||[])) {
     const uid = event.source?.userId;
