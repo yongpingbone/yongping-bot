@@ -1,5 +1,4 @@
-api/webhook.js
-import crypto from 'crypto';
+const crypto = require('crypto');
 
 const LINE_SECRET = process.env.LINE_SECRET;
 const LINE_TOKEN  = process.env.LINE_TOKEN;
@@ -12,7 +11,6 @@ const MASTER_LINE_IDS = {
   zhiwei:  process.env.LINE_ID_ZHIWEI,
   hongwen: process.env.LINE_ID_HONGWEN,
 };
-const MASTER_NAMES = { qi:'麒', zhi:'治', zhiwei:'哲瑋', hongwen:'泓文' };
 
 function verify(body, sig) {
   const hash = crypto.createHmac('SHA256', LINE_SECRET).update(body).digest('base64');
@@ -44,7 +42,7 @@ async function reply(token, text) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok:true });
 
   const sig = req.headers['x-line-signature'];
@@ -55,29 +53,25 @@ export default async function handler(req, res) {
     const uid = event.source?.userId;
     if (!uid) continue;
 
-    // 加好友 → 歡迎 + 請傳電話
     if (event.type === 'follow') {
       await reply(event.replyToken,
         `歡迎加入永平整復保健！🙏\n\n請傳您的手機號碼（09xxxxxxxx）完成綁定，即可收到預約提醒。`
       );
     }
 
-    // 收訊息
     if (event.type === 'message' && event.message.type === 'text') {
       const text = event.message.text.trim();
       const phoneMatch = text.match(/^(09\d{8})$/);
 
       if (phoneMatch) {
-        // 存綁定
         await sb('/line_bindings', {
           method:'POST',
           headers:{ 'Prefer':'resolution=merge-duplicates' },
           body: JSON.stringify({ line_user_id:uid, phone:text })
         });
 
-        // 確認是否為師傅
         let isMaster = false;
-        for (const [key, lineId] of Object.entries(MASTER_LINE_IDS)) {
+        for (const lineId of Object.values(MASTER_LINE_IDS)) {
           if (lineId === uid) { isMaster = true; break; }
         }
 
@@ -87,7 +81,6 @@ export default async function handler(req, res) {
             : `✅ 綁定成功！電話 ${text} 已和您的 LINE 綁定，之後有預約前一天中午會提醒您。`
         );
       } else {
-        // 記錄 user ID 供師傅查詢
         await sb('/line_bindings', {
           method:'POST',
           headers:{ 'Prefer':'resolution=merge-duplicates' },
@@ -98,4 +91,4 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).json({ ok:true });
-}
+};
