@@ -12,11 +12,6 @@ const MASTER_LINE_IDS = {
   hongwen: process.env.LINE_ID_HONGWEN,
 };
 
-function verify(body, sig) {
-  const hash = crypto.createHmac('SHA256', LINE_SECRET).update(body).digest('base64');
-  return hash === sig;
-}
-
 async function sb(path, opts={}) {
   const res = await fetch(SUPABASE_URL+'/rest/v1'+path, {
     ...opts,
@@ -46,8 +41,9 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok:true });
 
   const sig = req.headers['x-line-signature'];
-  const raw = JSON.stringify(req.body);
-  if (!verify(raw, sig)) return res.status(401).end();
+  const raw = req.rawBody || JSON.stringify(req.body);
+  const hash = crypto.createHmac('SHA256', LINE_SECRET).update(raw).digest('base64');
+  if (hash !== sig) return res.status(401).end();
 
   for (const event of (req.body.events||[])) {
     const uid = event.source?.userId;
