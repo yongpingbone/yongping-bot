@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>永平整復保健 線上預約</title>
+<script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+:root{
+  --bg:#0a0a14;--bg2:#11111e;--bg3:#181828;--border:#252538;
+  --text:#eeeef5;--t2:#777799;--cyan:#00e5e5;--cdim:rgba(0,229,229,.1);
+  --gold:#ffb300;--gdim:rgba(255,179,0,.1);--red:#ff4444;--green:#00d09c;
+  --safe:env(safe-area-inset-bottom,0px)
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;display:flex;flex-direction:column}
+
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-logo{font-size:15px;font-weight:900}
+.hdr-user{display:flex;align-items:center;gap:7px}
+.hdr-av{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border)}
+.hdr-nm{font-size:13px;color:var(--t2);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.nb{flex:1;padding:11px 8px;text-align:center;font-size:13px;font-weight:700;color:var(--t2);border:none;background:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:.15s;font-family:inherit}
+.nb.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+.scr{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scr::-webkit-scrollbar{display:none}
+.bwrap{padding:14px 14px 140px;max-width:480px;margin:0 auto}
+.mwrap{padding:14px 14px 100px;max-width:480px;margin:0 auto}
+
+.lbl{font-size:11px;font-weight:700;color:var(--t2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.sec{margin-top:18px}.sec:first-child{margin-top:0}
+.arrow{text-align:center;color:var(--t2);font-size:16px;margin:4px 0;opacity:.4}
+
+/* Master */
+.mrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.mrow::-webkit-scrollbar{display:none}
+.mc{display:flex;flex-direction:column;align-items:center;min-width:70px;padding:12px 8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:.15s;flex-shrink:0;user-select:none}
+.mc.on{border-color:var(--cyan);background:var(--cdim)}
+.mc.on-g{border-color:var(--gold);background:var(--gdim)}
+.mc-nm{font-size:16px;font-weight:900;margin-bottom:4px}
+.mc-tag{font-size:10px;padding:2px 6px;border-radius:8px;white-space:nowrap}
+.t-open{background:rgba(0,229,229,.15);color:var(--cyan)}
+.t-req{background:var(--gdim);color:var(--gold)}
+.t-auto{background:rgba(0,208,156,.15);color:var(--green)}
+
+/* Date */
+.drow{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.drow::-webkit-scrollbar{display:none}
+.dc{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:9px 6px;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:.15s;flex-shrink:0;user-select:none}
+.dc.on{border-color:var(--cyan);background:var(--cdim)}
+.dc.dim{opacity:.3;pointer-events:none}
+.d-mo{font-size:10px;color:var(--t2)}
+.d-num{font-size:19px;font-weight:900;line-height:1.1}
+.d-wk{font-size:10px;color:var(--t2)}
+
+/* Time */
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.ts{padding:12px 4px;border-radius:10px;text-align:center;font-size:13px;font-weight:500;background:var(--bg2);border:1.5px solid var(--border);cursor:pointer;transition:.1s;user-select:none}
+.ts:active{transform:scale(.93)}
+.ts.on{border-color:var(--cyan);background:var(--cdim);color:var(--cyan);font-weight:700}
+.ts.full{background:rgba(255,68,68,.06);border-color:rgba(255,68,68,.15);color:rgba(255,100,100,.5);cursor:not-allowed;font-size:11px}
+.ts.sk{background:var(--bg3);border-color:var(--bg3);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.8}}
+
+/* Bottom CTA */
+.cta-wrap{position:fixed;bottom:0;left:0;right:0;padding:12px 14px calc(12px + var(--safe));background:linear-gradient(transparent,var(--bg) 35%);z-index:100;pointer-events:none}
+.cta{width:100%;max-width:480px;margin:0 auto;display:block;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;transition:.15s;pointer-events:all;font-family:inherit}
+.cta-cyan{background:var(--cyan);color:#000}
+.cta-cyan:disabled{background:var(--border);color:var(--t2);cursor:not-allowed}
+.cta-cyan:active:not(:disabled){transform:scale(.97)}
+.cta-gold{background:var(--gold);color:#000}
+
+/* Sheet overlay */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:flex-end;justify-content:center}
+.ov.show{display:flex;animation:fi .15s}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--bg2);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 18px calc(24px + var(--safe));width:100%;max-width:480px;animation:su .2s ease-out forwards;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+@keyframes su{from{transform:translateY(50px);opacity:0}to{transform:none;opacity:1}}
+.s-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.s-title{font-size:17px;font-weight:900;margin-bottom:16px}
+
+/* Form */
+.fg{margin-bottom:14px}
+.fl{font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:700;letter-spacing:.3px;display:block}
+.fi{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:13px 14px;color:var(--text);font-size:16px;outline:none;transition:.15s;font-family:inherit;-webkit-appearance:none;-webkit-user-select:text;user-select:text;touch-action:manipulation}
+.fi:focus{border-color:var(--cyan)}
+.fi::placeholder{color:var(--t2)}
+textarea.fi{resize:none;min-height:80px;line-height:1.5}
+
+/* Chips group */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.chip{padding:8px 14px;border-radius:20px;font-size:13px;background:var(--bg3);border:1.5px solid var(--border);cursor:pointer;transition:.15s;user-select:none;font-family:inherit}
+.chip.on{border-color:var(--cyan);background:var(--cdim);color:var(--cyan);font-weight:700}
+.chip.on-g{border-color:var(--gold);background:var(--gdim);color:var(--gold);font-weight:700}
+
+/* Info box */
+.info-box{background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--t2);line-height:1.7;border-left:3px solid var(--gold)}
+
+/* Buttons row */
+.btn-row{display:flex;gap:10px;margin-top:6px}
+.btn-cancel{flex:1;padding:14px;border-radius:12px;background:none;border:1.5px solid var(--border);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-ok{flex:2;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit}
+.btn-cyan{background:var(--cyan);color:#000}
+.btn-gold{background:var(--gold);color:#000}
+
+/* My bookings */
+.bk{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.bk-db{background:var(--bg3);border-radius:10px;padding:8px 10px;text-align:center;min-width:50px;flex-shrink:0}
+.bk-dm{font-size:10px;color:var(--t2)}
+.bk-dd{font-size:22px;font-weight:900;line-height:1}
+.bk-dw{font-size:10px;color:var(--t2)}
+.bk-info{flex:1;min-width:0}
+.bk-time{font-size:20px;font-weight:900;color:var(--cyan);line-height:1.2}
+.bk-mst{font-size:13px;color:var(--t2);margin-top:2px}
+.bk-st{font-size:11px;padding:3px 9px;border-radius:10px;flex-shrink:0}
+.st-ok{background:rgba(0,208,156,.15);color:var(--green)}
+.st-pend{background:var(--gdim);color:var(--gold)}
+
+/* Toast */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 18px;font-size:14px;z-index:999;opacity:0;transition:.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* Loader */
+.loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:999}
+.spin{width:36px;height:36px;border:2.5px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:var(--t2)}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="spin"></div>
+  <div style="color:var(--t2);font-size:13px">載入中...</div>
+</div>
+
+<div id="app" style="display:none;height:100%;flex-direction:column">
+
+  <div class="hdr">
+    <div class="hdr-logo">🪄 永平整復保健</div>
+    <div class="hdr-user">
+      <img class="hdr-av" id="av" src="" onerror="this.style.display='none'">
+      <div class="hdr-nm" id="uname"></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nb on" id="n-book" onclick="goPage('book')">📅 預約</button>
+    <button class="nb" id="n-my" onclick="goPage('my')">📋 我的預約</button>
+  </div>
+
+  <div class="scr" id="scr">
+
+    <!-- 預約頁 -->
+    <div id="pg-book" class="bwrap">
+
+      <div class="sec">
+        <div class="lbl">選擇師傅</div>
+        <div class="mrow">
+          <div class="mc" id="mc-auto" onclick="pickM('auto')">
+            <div class="mc-nm">不指定</div>
+            <span class="mc-tag t-auto">自動分配</span>
+          </div>
+          <div class="mc" id="mc-zhiwei" onclick="pickM('zhiwei')">
+            <div class="mc-nm">哲瑋老師</div>
+            <span class="mc-tag t-open">立即預約</span>
+          </div>
+          <div class="mc" id="mc-hongwen" onclick="pickM('hongwen')">
+            <div class="mc-nm">泓文老師</div>
+            <span class="mc-tag t-open">立即預約</span>
+          </div>
+          <div class="mc" id="mc-qi" onclick="pickM('qi')">
+            <div class="mc-nm">許老師</div>
+            <span class="mc-tag t-req">需申請</span>
+          </div>
+          <div class="mc" id="mc-zhi" onclick="pickM('zhi')">
+            <div class="mc-nm">魏老師</div>
+            <span class="mc-tag t-req">需申請</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec" id="sec-date" style="display:none">
+        <div class="arrow">↓</div>
+        <div class="lbl">選擇日期</div>
+        <div class="drow" id="drow"></div>
+      </div>
+
+      <div class="sec" id="sec-time" style="display:none">
+        <div class="arrow">↓</div>
+        <div class="lbl">選擇時段</div>
+        <div class="tgrid" id="tgrid"></div>
+      </div>
+
+    </div>
+
+    <!-- 我的預約頁 -->
+    <div id="pg-my" class="mwrap" style="display:none">
+      <div id="mylist"><div class="empty"><div class="spin" style="margin:0 auto"></div></div></div>
+    </div>
+
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-wrap" id="ctawrap" style="display:none">
+    <button class="cta cta-cyan" id="ctabtn" onclick="openForm()">選好了，填資料 →</button>
+  </div>
+
+</div>
+
+<!-- 表單 sheet（所有師傅共用） -->
+<div class="ov" id="sh-form">
+<div class="sheet">
+  <div class="s-handle"></div>
+  <div class="s-title" id="sh-title">填寫預約資料</div>
+
+  <!-- 麒/治專用提示 -->
+  <div class="info-box" id="sh-req-note" style="display:none">
+    ⚡ 魏老師固定客多，需等待，送出後會有真人回覆確認時間。<br>
+    如急需請致電：<b>02-8285-4865</b>
+  </div>
+
+  <!-- 預約摘要 -->
+  <div id="sh-sum" style="background:var(--bg3);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:13px;line-height:1.8;display:none"></div>
+
+  <!-- 姓名 -->
+  <div class="fg">
+    <label class="fl">姓名（全名或姓氏皆可）</label>
+    <input class="fi" id="f-name" placeholder="請輸入姓名" autocomplete="off" />
+  </div>
+
+  <!-- 電話 -->
+  <div class="fg">
+    <label class="fl">手機號碼</label>
+    <input class="fi" id="f-phone" placeholder="09xxxxxxxx" type="tel" inputmode="numeric" />
+  </div>
+
+  <!-- 預約人數 -->
+  <div class="fg">
+    <label class="fl">預約人數</label>
+    <div class="chips" id="chips-count">
+      <button class="chip" onclick="pickChip('count','1人')">1人</button>
+      <button class="chip" onclick="pickChip('count','2人')">2人</button>
+      <button class="chip" onclick="pickChip('count','3人')">3人</button>
+      <button class="chip" onclick="pickChip('count','4人')">4人</button>
+    </div>
+  </div>
+
+  <!-- 有無開過刀 -->
+  <div class="fg">
+    <label class="fl">有無開過刀</label>
+    <div class="chips" id="chips-op">
+      <button class="chip" onclick="pickChip('op','無')">無</button>
+      <button class="chip" onclick="pickChip('op','有，未滿1年')">有，未滿1年</button>
+      <button class="chip" onclick="pickChip('op','有，1-3年')">有，1-3年</button>
+      <button class="chip" onclick="pickChip('op','有，3年以上')">有，3年以上</button>
+    </div>
+  </div>
+
+  <!-- 希望時段（麒/治必填） -->
+  <div class="fg" id="fg-avail">
+    <label class="fl">希望預約時段 <span id="avail-required" style="color:var(--gold)">（必填）</span></label>
+    <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:700">📅 平日（週一～週五）</div>
+        <input class="fi" id="f-weekday" placeholder="例：20:00 ~ 22:00" />
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:700">🗓️ 假日（週六）</div>
+        <input class="fi" id="f-weekend" placeholder="例：14:00 ~ 18:00" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 想預約的時間（哲瑋/泓文/auto 才顯示確切時間摘要） -->
+  <div class="fg" id="fg-note">
+    <label class="fl">備註（選填）</label>
+    <input class="fi" id="f-note" placeholder="例如：有舊傷、特殊狀況..." />
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-cancel" onclick="closeForm()">取消</button>
+    <button class="btn-ok" id="sh-ok" onclick="doSubmit()">確認送出</button>
+  </div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL = 'https://ikzyzkhuireqztbhrtna.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrenl6a2h1aXJlcXp0YmhydG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMjI1NjIsImV4cCI6MjA5Mjc5ODU2Mn0.rIXfMsiuYg6HoJaACxvxr1SFS9M3m7XNP57qcoyvRxw';
+const LIFF_ID = '2009934614-9PWvOAfL';
+const LINE_TOKEN = '/k3mBARABaDazQ2PlHc55JD3mVve6NXDuTrYF0SdVGHWxoNJW4Fo60CzxNtSZkH3n/Pv6smgyPstXJrgzFwXMlQ6zsi8JC+JVYzk9dj2b4/FNUOAFwSkI9sdLppv1pmdBGVKlYi+BABsXnICP+wqhQdB04t89/1O/w1cDnyilFU=';
+
+const MASTERS = {
+  zhiwei: {id:'7ae4e5c5-bfa5-46f6-8a90-a96e8721cea5', name:'哲瑋老師', type:'open'},
+  hongwen:{id:'b98e3afb-42d1-4149-b278-12d5493885b1', name:'泓文老師', type:'open'},
+  qi:     {id:'13eebe4e-9cee-45ee-aab9-d5b4cb4e6186', name:'許老師',   type:'request'},
+  zhi:    {id:'e9021367-64c7-476d-a079-2e8e2475988e', name:'魏老師',   type:'request'},
+  auto:   {id:null, name:'不指定', type:'auto'},
+};
+const MNAME = {
+  '7ae4e5c5-bfa5-46f6-8a90-a96e8721cea5':'哲瑋老師',
+  'b98e3afb-42d1-4149-b278-12d5493885b1':'泓文老師',
+  '13eebe4e-9cee-45ee-aab9-d5b4cb4e6186':'許老師',
+  'e9021367-64c7-476d-a079-2e8e2475988e':'魏老師',
+};
+const WK = ['日','一','二','三','四','五','六'];
+
+// All 30-min slots 09:30~21:30
+const ALL_TIMES = [];
+for(let h=9;h<=21;h++){
+  if(h===9){ALL_TIMES.push('09:30');}
+  else{
+    ALL_TIMES.push(String(h).padStart(2,'0')+':00');
+    if(h<21) ALL_TIMES.push(String(h).padStart(2,'0')+':30');
+  }
+}
+ALL_TIMES.push('21:00');ALL_TIMES.push('21:30');
+// dedupe & sort
+const TIMES = [...new Set(ALL_TIMES)].sort();
+
+let profile = null;
+let selM = null, selD = null, selT = null;
+let chipVals = {};
+let slotCache = {}; // date+masterKey -> booked set
+let selectedDays = new Set();
+
+// ── Supabase fetch ───────────────────
+async function sb(path, opts={}){
+  const r = await fetch(SB_URL+'/rest/v1'+path,{
+    ...opts,
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json',...(opts.headers||{})}
+  });
+  if(!r.ok) throw new Error(await r.text());
+  const ct = r.headers.get('content-type')||'';
+  return ct.includes('json') ? r.json() : null;
+}
+
+// ── LINE push ────────────────────────
+async function linePush(text){
+  await fetch('https://api.line.me/v2/bot/message/broadcast',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+LINE_TOKEN},
+    body:JSON.stringify({messages:[{type:'text',text}]})
+  }).catch(()=>{});
+}
+
+// ── Init ─────────────────────────────
+async function init(){
+  try{
+    await liff.init({liffId:LIFF_ID});
+    if(!liff.isLoggedIn()){liff.login();return;}
+    profile = await liff.getProfile();
+    document.getElementById('av').src = profile.pictureUrl||'';
+    document.getElementById('uname').textContent = profile.displayName;
+
+    // save line binding
+    sb('/line_bindings',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({line_user_id:profile.userId,display_name:profile.displayName})}).catch(()=>{});
+  }catch(e){
+    profile={userId:'dev',displayName:'',pictureUrl:''};
+    document.getElementById('uname').textContent='訪客';
+  }
+  buildDates();
+  document.getElementById('loader').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';
+  loadMyBookings();
+}
+
+// ── Page nav ─────────────────────────
+function goPage(p){
+  ['book','my'].forEach(x=>{
+    document.getElementById('pg-'+x).style.display = x===p?'block':'none';
+    document.getElementById('n-'+x).classList.toggle('on',x===p);
+  });
+  if(p==='my') loadMyBookings();
+  if(p==='book') document.getElementById('ctawrap').style.display = (selM&&selD&&selT)?'block':'none';
+  else document.getElementById('ctawrap').style.display='none';
+}
+
+// ── Master pick ───────────────────────
+function pickM(key){
+  selM=key; selD=null; selT=null;
+  document.querySelectorAll('.mc').forEach(el=>el.classList.remove('on','on-g'));
+  const chip=document.getElementById('mc-'+key);
+  const isReq = MASTERS[key]?.type==='request';
+  chip.classList.add(isReq?'on-g':'on');
+
+  if(isReq){
+    // 許老師/魏老師：直接跳申請表單
+    document.getElementById('sec-date').style.display='none';
+    document.getElementById('sec-time').style.display='none';
+    document.getElementById('ctawrap').style.display='none';
+    openForm();
+    return;
+  }
+
+  // 哲瑋老師/泓文老師/不指定：顯示日期選擇
+  document.getElementById('sec-date').style.display='block';
+  document.getElementById('sec-time').style.display='none';
+  document.getElementById('ctawrap').style.display='none';
+  const today=new Date();
+  for(let i=0;i<7;i++){
+    const d=new Date(today);d.setDate(d.getDate()+i);
+    prefetch(d.toISOString().slice(0,10));
+  }
+  setTimeout(()=>document.getElementById('sec-date').scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+// ── Build dates ───────────────────────
+function buildDates(){
+  const row=document.getElementById('drow');
+  row.innerHTML='';
+  const now=new Date(); now.setHours(0,0,0,0);
+  const lastWeek=new Date(now.getFullYear(),now.getMonth()+1,0);
+  lastWeek.setDate(lastWeek.getDate()-6);
+  const end=new Date(now.getFullYear(),now.getMonth()+(now>=lastWeek?2:1),0);
+  for(let d=new Date(now);d<=end;d.setDate(d.getDate()+1)){
+    const dd=new Date(d);
+    const str=dd.toISOString().slice(0,10);
+    const el=document.createElement('div');
+    el.className='dc';el.dataset.date=str;
+    el.innerHTML=`<div class="d-mo">${dd.getMonth()+1}月</div><div class="d-num">${dd.getDate()}</div><div class="d-wk">週${WK[dd.getDay()]}</div>`;
+    el.onclick=()=>pickDate(str);
+    row.appendChild(el);
+  }
+}
+
+// ── Prefetch slots ────────────────────
+async function prefetch(dateStr){
+  if(slotCache[dateStr]) return;
+  slotCache[dateStr]='loading';
+  const mids = [MASTERS.zhiwei.id,MASTERS.hongwen.id,MASTERS.qi.id,MASTERS.zhi.id];
+  const list=mids.map(id=>`"${id}"`).join(',');
+  const rows = await sb(`/bookings?master_id=in.(${list})&date=eq.${dateStr}&status=in.(confirmed,tentative)&select=start_time,color_tag,master_id`).catch(()=>[]);
+  slotCache[dateStr]=rows||[];
+}
+
+// ── Date pick ─────────────────────────
+async function pickDate(str){
+  selD=str; selT=null;
+  document.querySelectorAll('.dc').forEach(el=>el.classList.toggle('on',el.dataset.date===str));
+  document.getElementById('sec-time').style.display='block';
+  document.getElementById('ctawrap').style.display='none';
+  renderSlots();
+  setTimeout(()=>document.getElementById('sec-time').scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+  // Ensure fetched
+  if(!slotCache[str]||slotCache[str]==='loading'){
+    await prefetch(str);
+    renderSlots();
+  }
+}
+
+// ── Render slots ──────────────────────
+function renderSlots(){
+  const grid=document.getElementById('tgrid');
+  const rows=slotCache[selD];
+  const isLoading=!rows||rows==='loading';
+
+  if(isLoading){
+    grid.innerHTML=TIMES.map(t=>`<div class="ts sk">${t}</div>`).join('');
+    return;
+  }
+
+  const now=new Date();
+  const isToday=selD===now.toISOString().slice(0,10);
+  const masterIds=getMasterIds();
+
+  grid.innerHTML='';
+  TIMES.forEach(t=>{
+    const [hh,mm]=t.split(':').map(Number);
+    const isPast=isToday&&(hh*60+mm)<=(now.getHours()*60+now.getMinutes()+30);
+    const bookedForMasters=rows.filter(b=>masterIds.includes(b.master_id)&&b.start_time.slice(0,5)===t);
+    const isFull=isPast||(selM==='auto'
+      ? bookedForMasters.length>=masterIds.length
+      : bookedForMasters.length>0
+    );
+    const el=document.createElement('div');
+    el.dataset.time=t;
+    if(isFull){
+      el.className='ts full';
+      el.textContent=isPast?'已過':'已滿';
+    } else {
+      el.className='ts'+(selT===t?' on':'');
+      el.textContent=t;
+      el.onclick=()=>pickTime(t);
+    }
+    grid.appendChild(el);
+  });
+}
+
+function getMasterIds(){
+  if(selM==='auto'||!selM) return [MASTERS.zhiwei.id,MASTERS.hongwen.id];
+  if(MASTERS[selM]?.id) return [MASTERS[selM].id];
+  return [];
+}
+
+// ── Time pick ─────────────────────────
+function pickTime(t){
+  selT=t;
+  document.querySelectorAll('.ts').forEach(el=>el.classList.toggle('on',el.dataset.time===t));
+  document.getElementById('ctawrap').style.display='block';
+  setTimeout(()=>document.getElementById('ctawrap').scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+// ── Open form ─────────────────────────
+function openForm(){
+  const isReqCheck=MASTERS[selM]?.type==='request';
+  if(!selM){toast('請選擇師傅','err');return;}
+  if(!isReqCheck&&(!selD||!selT)){toast('請選擇日期和時段','err');return;}
+  const m=MASTERS[selM];
+  const isReq=m?.type==='request';
+  const mname=isReq?m.name:(selM==='auto'?'不指定':m.name);
+
+  // Title
+  document.getElementById('sh-title').textContent=isReq?`申請預約 - ${mname}`:'填寫預約資料';
+  // req note
+  document.getElementById('sh-req-note').style.display=isReq?'block':'none';
+  if(isReq) document.getElementById('sh-req-note').innerHTML='⚡ '+mname+'固定客多，需等待，送出後會有真人回覆確認時間。<br>如急需請致電：<b>02-8285-4865</b>';
+  // sum
+  if(!isReq){
+    const sd=document.getElementById('sh-sum');
+    sd.style.display='block';
+    sd.innerHTML=`師傅：<b style="color:var(--cyan)">${mname}</b>　日期：<b style="color:var(--cyan)">${selD}</b>　時間：<b style="color:var(--cyan)">${selT}</b>`;
+  } else {
+    document.getElementById('sh-sum').style.display='none';
+  }
+  // avail required
+  document.getElementById('avail-required').style.display=isReq?'inline':'none';
+  // button style
+  const ok=document.getElementById('sh-ok');
+  ok.textContent=isReq?'送出申請':'確認預約';
+  ok.className=`btn-ok ${isReq?'btn-gold':'btn-cyan'}`;
+  // reset chips
+  chipVals={};selectedDays=new Set();
+  document.getElementById('f-name').value='';
+  document.getElementById('f-phone').value='';
+  document.querySelectorAll('.chip').forEach(el=>el.classList.remove('on','on-g'));
+  if(document.getElementById('f-weekday')) document.getElementById('f-weekday').value='';
+  if(document.getElementById('f-weekend')) document.getElementById('f-weekend').value='';
+  document.getElementById('f-note').value='';
+
+  document.getElementById('sh-form').classList.add('show');
+  setTimeout(()=>document.getElementById('f-phone').focus(),300);
+}
+
+function closeForm(){document.getElementById('sh-form').classList.remove('show');}
+
+// ── Chip helpers ──────────────────────
+function pickChip(group,val){
+  chipVals[group]=val;
+  const container=document.getElementById('chips-'+group);
+  container.querySelectorAll('.chip').forEach(el=>{
+    el.classList.toggle('on',el.textContent===val);
+    el.classList.remove('on-g');
+  });
+}
+
+
+// ── Submit ────────────────────────────
+async function doSubmit(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  const weekday=document.getElementById('f-weekday')?.value.trim()||'';
+  const weekend=document.getElementById('f-weekend')?.value.trim()||'';
+  const avail=[weekday?`平日：${weekday}`:'', weekend?`假日：${weekend}`:''].filter(Boolean).join('　');
+  const note=document.getElementById('f-note').value.trim();
+  const count=chipVals['count']||'';
+  const op=chipVals['op']||'';
+  const m=MASTERS[selM];
+  const isReq=m?.type==='request';
+
+  if(!name){toast('請輸入姓名','err');return;}
+  if(!phone||!/^09\d{8}$/.test(phone)){toast('請輸入正確手機號碼','err');return;}
+  if(isReq&&!weekday&&!weekend){toast('請填寫至少一個希望時段','err');return;}
+
+  const btn=document.getElementById('sh-ok');
+  btn.disabled=true; btn.textContent='處理中...';
+
+  // Build note string
+  const noteArr=[];
+  if(count) noteArr.push(`人數：${count}`);
+  if(op) noteArr.push(`開刀：${op}`);
+  if(selectedDays.size) noteArr.push(`偏好：${[...selectedDays].join('/')}${avail?'  '+avail:''}`);
+  else if(avail) noteArr.push(`時段：${avail}`);
+  if(note) noteArr.push(note);
+  const fullNote=noteArr.join('　');
+
+  try{
+    let masterId=m?.id;
+    let status='confirmed';
+
+    if(selM==='auto'){
+      masterId=await findFree(selD,selT);
+      if(!masterId){toast('該時段已無空位','err');btn.disabled=false;btn.textContent='確認預約';return;}
+    }
+
+    if(isReq) status='tentative';
+
+    const raw=phone?`${name}${phone}`:name;
+    await sb('/bookings',{
+      method:'POST',
+      headers:{'Prefer':'return=minimal'},
+      body:JSON.stringify({
+        master_id:masterId||MASTERS.zhiwei.id,
+        raw_input:raw,customer_name:name,customer_phone:phone||null,
+        date:isReq?null:selD,
+        start_time:isReq?null:(selT+':00'),
+        guest_count:parseInt(count)||1,
+        color_tag:'none',
+        note:fullNote||null,
+        booking_source:'customer_app',status
+      })
+    });
+
+    // Save phone binding
+    if(profile?.userId){
+      sb('/line_bindings',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({line_user_id:profile.userId,phone,display_name:name})}).catch(()=>{});
+    }
+
+    // Notify
+    const mname=m?.name||'不指定';
+    const msg=isReq
+      ? `📩 新預約申請\n師傅：${mname}\n姓名：${name}\n電話：${phone}\n${fullNote}\n\n請確認後通知客人`
+      : `📅 新預約通知\n師傅：${MNAME[masterId]||mname}\n日期：${selD} ${selT}\n姓名：${name}\n電話：${phone}${fullNote?'\n'+fullNote:''}`;
+    await linePush(msg);
+
+    closeForm();
+    toast(isReq?'申請已送出！師傅確認後通知您':'預約成功！','ok');
+    reset();
+    goPage('my');
+  }catch(e){
+    toast('送出失敗，請重試','err');
+    console.error(e);
+  }
+  btn.disabled=false;
+  btn.textContent=isReq?'送出申請':'確認預約';
+}
+
+async function findFree(date,time){
+  const rows=slotCache[date]||[];
+  for(const mid of [MASTERS.zhiwei.id,MASTERS.hongwen.id]){
+    const taken=rows.filter(b=>b.master_id===mid&&b.start_time.slice(0,5)===time);
+    if(!taken.length) return mid;
+  }
+  return null;
+}
+
+function reset(){
+  selM=null;selD=null;selT=null;
+  document.querySelectorAll('.mc').forEach(el=>el.classList.remove('on','on-g'));
+  document.getElementById('sec-date').style.display='none';
+  document.getElementById('sec-time').style.display='none';
+  document.getElementById('ctawrap').style.display='none';
+}
+
+// ── My bookings ───────────────────────
+async function loadMyBookings(){
+  const el=document.getElementById('mylist');
+  el.innerHTML='<div class="empty"><div class="spin" style="margin:0 auto"></div></div>';
+  if(!profile?.userId){el.innerHTML='<div class="empty">請先登入 LINE</div>';return;}
+  const bindings=await sb(`/line_bindings?line_user_id=eq.${profile.userId}`).catch(()=>[]);
+  const phone=bindings?.[0]?.phone;
+  if(!phone){el.innerHTML='<div class="empty" style="font-size:13px">完成第一次預約後<br>預約紀錄會顯示在這裡</div>';return;}
+  const today=new Date().toISOString().slice(0,10);
+  const bks=await sb(`/bookings?customer_phone=eq.${phone}&date=gte.${today}&status=neq.cancelled&order=date,start_time&limit=20`).catch(()=>[]);
+  if(!bks||!bks.length){el.innerHTML='<div class="empty">目前沒有即將到來的預約</div>';return;}
+  el.innerHTML=bks.map(b=>{
+    const d=new Date(b.date);
+    const stMap={confirmed:['st-ok','已確認'],tentative:['st-pend','待確認']};
+    const [sc,st]=stMap[b.status]||['st-ok','確認'];
+    return `<div class="bk">
+      <div class="bk-db"><div class="bk-dm">${d.getMonth()+1}月</div><div class="bk-dd">${d.getDate()}</div><div class="bk-dw">週${WK[d.getDay()]}</div></div>
+      <div class="bk-info"><div class="bk-time">${b.start_time.slice(0,5)}</div><div class="bk-mst">${MNAME[b.master_id]||''} 師傅</div></div>
+      <span class="bk-st ${sc}">${st}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Toast ─────────────────────────────
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type||'');
+  setTimeout(()=>el.className='toast',2500);
+}
+
+// Close sheet on overlay click
+document.getElementById('sh-form').addEventListener('click',function(e){
+  if(e.target===this) closeForm();
+});
+// Prevent sheet from closing when interacting with inputs
+document.querySelector('#sh-form .sheet').addEventListener('click',function(e){e.stopPropagation();});
+
+init();
+</script>
+</body>
+</html>
